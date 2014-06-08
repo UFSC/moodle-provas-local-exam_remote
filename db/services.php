@@ -9,6 +9,14 @@ $functions = array(
                 'type'        => 'read',
         ),
 
+        'local_exam_remote_get_categories' => array(
+                'classname'   => 'local_exam_remote_external',
+                'methodname'  => 'get_categories',
+                'classpath'   => 'local/exam_remote/externallib.php',
+                'description' => 'Return a list of categories giving a list of category ids',
+                'type'        => 'read',
+        ),
+
         'local_exam_remote_get_students' => array(
                 'classname'   => 'local_exam_remote_external',
                 'methodname'  => 'get_students',
@@ -30,6 +38,7 @@ $functions = array(
 $services = array(
         'Exam Moodle' => array(
                 'functions' => array ('local_exam_remote_get_courses',
+                                      'local_exam_remote_get_categories',
                                       'local_exam_remote_get_students',
                                       'local_exam_remote_is_teacher_or_monitor',
                                      ),

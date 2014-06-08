@@ -37,17 +37,20 @@ class local_exam_remote_external extends external_api {
 
     public static function get_courses_returns() {
         return new external_multiple_structure(
-                    new external_single_structure(
-                        array(
-                            'shortname' => new external_value(PARAM_RAW, 'Course shortname'),
-                            'fullname'  => new external_value(PARAM_RAW, 'Course fullname'),
-                        )
-                    )
-        );
+                      new external_single_structure(
+                          array(
+                              'shortname'  => new external_value(PARAM_TEXT, 'Course shortname'),
+                              'fullname'   => new external_value(PARAM_TEXT, 'Course fullname'),
+                              'categoryid' => new external_value(PARAM_INT, 'Category id'),
+                          )
+                      )
+               );
     }
 
     private static function get_courses_by_capability($userid, $capability, $only_visible=true, $only_enrolled=true) {
-        $candidate_courses = enrol_get_all_users_courses($userid, true, 'id, shortname, fullname, visible', 'fullname');
+        global $DB;
+
+        $candidate_courses = enrol_get_all_users_courses($userid, true, 'id, category, shortname, fullname, visible', 'fullname');
         if(!$only_enrolled) {
             // todo: add other courses
         }
@@ -57,12 +60,60 @@ class local_exam_remote_external extends external_api {
             if ($course->visible || !$only_visible) {
                 if ($context = context_course::instance($id)) {
                     if (has_capability($capability, $context, $userid)) {
-                        $courses[] = array('shortname'=>$course->shortname, 'fullname'=>$course->fullname);
+                        $courses[] = array('shortname'  => $course->shortname,
+                                           'fullname'   => $course->fullname,
+                                           'categoryid' => $course->category);
                     }
                 }
             }
         }
+
         return $courses;
+    }
+
+// --------------------------------------------------------------------------------------------------------
+
+    public static function get_categories_parameters() {
+        return new external_function_parameters(
+                        array('categoryids'=>new external_multiple_structure(new external_value(PARAM_INT, 'Category id')))
+                   );
+    }
+
+    public static function get_categories($categoryids) {
+        global $DB;
+
+        $params = self::validate_parameters(self::get_categories_parameters(), array('categoryids'=>$categoryids));
+
+        if(empty($categoryids)) {
+            return array();
+        }
+
+        $str_categoryids = implode(',', $categoryids);
+        $sql = "SELECT cc2.id, cc2.name, cc2.path
+                  FROM {course_categories} cc
+                  JOIN {course_categories} cc2 ON (cc2.id = cc.id OR cc.path LIKE CONCAT('%/',cc2.id,'/%') )
+                 WHERE cc.id IN ({$str_categoryids})
+              ORDER BY cc2.depth, cc2.name";
+        $cats = $DB->get_records_sql($sql);
+        foreach($cats AS $catid=>$cat) {
+            $path = explode('/', $cat->path);
+            unset($path[0]);
+            $cats[$catid]->path = $path;
+        }
+
+        return array_values($cats);
+    }
+
+    public static function get_categories_returns() {
+        return new external_multiple_structure(
+                     new external_single_structure(
+                         array(
+                             'id'   => new external_value(PARAM_INT, 'Category id'),
+                             'name' => new external_value(PARAM_TEXT, 'Category name'),
+                             'path' => new external_multiple_structure(new external_value(PARAM_INT), 'Category path'),
+                         )
+                     )
+               );
     }
 
 // --------------------------------------------------------------------------------------------------------

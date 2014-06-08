@@ -2,7 +2,7 @@
 
 define('CLI_SCRIPT', true);
 
-include('../../../config.php');
+include(dirname(__FILE__) . '/../../../config.php');
 require_once($CFG->libdir . '/filelib.php');
 
 $domainname = 'https://mariani.moodle.ufsc.br/presencial2';
