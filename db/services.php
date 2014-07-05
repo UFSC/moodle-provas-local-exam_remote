@@ -31,8 +31,15 @@ $functions = array(
                 'classpath'   => 'local/exam_remote/externallib.php',
                 'description' => 'Verify if the user is a teacher or monitor',
                 'type'        => 'read',
-        )
+        ),
 
+        'local_exam_remote_restore_activity' => array(
+                'classname'   => 'local_exam_remote_external',
+                'methodname'  => 'restore_activity',
+                'classpath'   => 'local/exam_remote/externallib.php',
+                'description' => 'Restore an activity',
+                'type'        => 'write',
+        ),
 );
 
 $services = array(
@@ -41,6 +48,7 @@ $services = array(
                                       'local_exam_remote_get_categories',
                                       'local_exam_remote_get_students',
                                       'local_exam_remote_is_teacher_or_monitor',
+                                      'local_exam_remote_restore_activity',
                                      ),
                 'restrictedusers' => 0,
                 'enabled'=>1,

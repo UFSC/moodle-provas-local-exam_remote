@@ -29,3 +29,8 @@ $string['exam_remote:write_exam'] = 'Elabora uma prova';
 $string['exam_remote:take_exam'] = 'Realiza uma prova';
 
 $string['rolename'] = 'Role name: teacher, monitor or student';
+
+$string['unknown_course'] = 'Curso desconhecido: \'{$a}\'';
+$string['unknown_user'] = 'Usuário desconhecido: \'{$a}\'';
+$string['no_permission'] = 'Usuário sem permissão: \'{$a}\'';
+$string['backup_file_not_found'] = 'Arquivo de backup da atividade não foi informado';
