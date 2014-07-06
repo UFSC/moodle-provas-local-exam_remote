@@ -244,7 +244,7 @@ class local_exam_remote_external extends external_api {
         $zip = new zip_packer();
         $zip->extract_to_pathname($_FILES['backup_file']['tmp_name'],  $CFG->dataroot . '/temp/backup/' . $rand_backup_path);
 
-        $adminid = $DB->get_field('user', array('username'=>'admin');
+        $adminid = $DB->get_field('user', array('username'=>'admin'));
         $controller = new restore_controller($rand_backup_path, $course->id, backup::INTERACTIVE_NO, backup::MODE_GENERAL,
                                              $adminid, backup::TARGET_EXISTING_ADDING);
         $controller->execute_precheck();
