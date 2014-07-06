@@ -43,14 +43,14 @@ $functions = array(
 );
 
 $services = array(
-        'Exam Moodle' => array(
+       'Moodle Exam' => array(
                 'functions' => array ('local_exam_remote_get_courses',
                                       'local_exam_remote_get_categories',
                                       'local_exam_remote_get_students',
                                       'local_exam_remote_is_teacher_or_monitor',
                                       'local_exam_remote_restore_activity',
                                      ),
-                'restrictedusers' => 0,
+                'restrictedusers' => 1,
                 'enabled'=>1,
         )
 );
