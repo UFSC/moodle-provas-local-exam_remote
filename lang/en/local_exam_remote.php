@@ -24,9 +24,10 @@
 
 $string['pluginname'] = 'WS para comunicação com o Moodle Provas';
 
-$string['exam_remote:monitor_exam'] = 'Acompanha e fiscaliza a realização de uma prova';
-$string['exam_remote:write_exam'] = 'Elabora uma prova';
-$string['exam_remote:take_exam'] = 'Realiza uma prova';
+$string['exam_remote:take_exam'] = 'Realizar prova no Moodle Provas';
+$string['exam_remote:write_exam'] = 'Elaborar prova no Moodle Provas';
+$string['exam_remote:conduct_exam'] = 'Gerar chave de acesso para a realização de prova no Moodle Provas';
+$string['exam_remote:monitor_exam'] = 'Visualizar relatórios de acompanhamento de prova no Moodle Provas';
 
 $string['rolename'] = 'Role name: teacher, monitor or student';
 

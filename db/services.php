@@ -1,11 +1,19 @@
 <?php
 
 $functions = array(
-        'local_exam_remote_get_courses' => array(
+        'local_exam_remote_get_user_courses' => array(
                 'classname'   => 'local_exam_remote_external',
-                'methodname'  => 'get_courses',
+                'methodname'  => 'get_user_courses',
                 'classpath'   => 'local/exam_remote/externallib.php',
-                'description' => 'Return a list of courses (shortname, fullname) giving a username and role name',
+                'description' => 'Return a list of user courses (shortname, fullname) giving a username',
+                'type'        => 'read',
+        ),
+
+        'local_exam_remote_get_user_functions' => array(
+                'classname'   => 'local_exam_remote_external',
+                'methodname'  => 'get_user_functions',
+                'classpath'   => 'local/exam_remote/externallib.php',
+                'description' => 'Return a list of user functions giving a username',
                 'type'        => 'read',
         ),
 
@@ -25,14 +33,6 @@ $functions = array(
                 'type'        => 'read',
         ),
 
-        'local_exam_remote_is_teacher_or_monitor' => array(
-                'classname'   => 'local_exam_remote_external',
-                'methodname'  => 'is_teacher_or_monitor',
-                'classpath'   => 'local/exam_remote/externallib.php',
-                'description' => 'Verify if the user is a teacher or monitor',
-                'type'        => 'read',
-        ),
-
         'local_exam_remote_restore_activity' => array(
                 'classname'   => 'local_exam_remote_external',
                 'methodname'  => 'restore_activity',
@@ -44,10 +44,10 @@ $functions = array(
 
 $services = array(
        'Moodle Exam' => array(
-                'functions' => array ('local_exam_remote_get_courses',
+                'functions' => array ('local_exam_remote_get_user_courses',
+                                      'local_exam_remote_get_user_functions',
                                       'local_exam_remote_get_categories',
                                       'local_exam_remote_get_students',
-                                      'local_exam_remote_is_teacher_or_monitor',
                                       'local_exam_remote_restore_activity',
                                      ),
                 'restrictedusers' => 1,
