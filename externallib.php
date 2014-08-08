@@ -39,6 +39,42 @@ class local_exam_remote_external extends external_api {
 
 // --------------------------------------------------------------------------------------------------------
 
+    public static function get_courseid_parameters() {
+        return new external_function_parameters(
+                        array('key'  =>new external_value(PARAM_TEXT, 'Course key: shortname or idnumber'),
+                              'value'=>new external_value(PARAM_TEXT, 'key value'))
+                   );
+    }
+
+    public static function get_courseid($key, $value) {
+        global $DB;
+
+        $params = self::validate_parameters(self::get_courseid_parameters(), array('key'=>$key, 'value'=>$value));
+
+        if(empty($key) || empty($value)) {
+            return 0;
+        }
+        if($key != 'shortname' && $key != 'idnumber') {
+            return 0;
+        }
+
+        if($DB->count_records('course', array($key=>$value)) > 1) {
+            return -1;
+        }
+
+        if($id = $DB->get_field('course', 'id', array($key=>$value))) {
+            return $id != 1 ? $id : 0;
+        } else {
+            return 0;
+        }
+    }
+
+    public static function get_courseid_returns() {
+        return new external_value(PARAM_INT, 'Course id, 0 if course does not exist, or -1 if there are more than one course');
+    }
+
+// --------------------------------------------------------------------------------------------------------
+
     public static function get_user_courses_parameters() {
         return new external_function_parameters(
                         array('username'=>new external_value(PARAM_TEXT, 'Username', VALUE_DEFAULT, ''))

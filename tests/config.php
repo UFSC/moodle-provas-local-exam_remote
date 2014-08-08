@@ -5,8 +5,8 @@ define('CLI_SCRIPT', true);
 include(dirname(__FILE__) . '/../../../config.php');
 require_once($CFG->libdir . '/filelib.php');
 
-$domainname = 'https://mariani.moodle.ufsc.br/ead2';
-$token = '660db7d10e53b061fe67120673e4328b';
+$domainname = 'https://???';
+$token = '???';
 
 function call_ws($functionname, $params) {
     global $domainname, $token;

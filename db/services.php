@@ -40,6 +40,14 @@ $functions = array(
                 'description' => 'Restore an activity',
                 'type'        => 'write',
         ),
+
+        'local_exam_remote_get_courseid' => array(
+                'classname'   => 'local_exam_remote_external',
+                'methodname'  => 'get_courseid',
+                'classpath'   => 'local/exam_remote/externallib.php',
+                'description' => 'Get course id based on shortname ou idnumber',
+                'type'        => 'read',
+        ),
 );
 
 $services = array(
@@ -48,6 +56,7 @@ $services = array(
                                       'local_exam_remote_get_user_functions',
                                       'local_exam_remote_get_categories',
                                       'local_exam_remote_get_students',
+                                      'local_exam_remote_get_courseid',
                                       'local_exam_remote_restore_activity',
 
                                       'core_group_get_course_groupings',
