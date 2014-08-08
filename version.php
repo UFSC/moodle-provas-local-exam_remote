@@ -13,5 +13,5 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 $plugin->component = 'local_exam_remote';
-$plugin->version  = 2014080701;
+$plugin->version  = 2014080702;
 $plugin->requires = 2013111802;
