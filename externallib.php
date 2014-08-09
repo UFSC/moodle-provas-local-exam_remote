@@ -155,36 +155,39 @@ class local_exam_remote_external extends external_api {
     public static function get_students_parameters() {
         return new external_function_parameters(
                         array('shortname'=>new external_value(PARAM_TEXT, 'Course shortname', VALUE_DEFAULT, ''),
-                              'extrauserfields'=>new external_multiple_structure(new external_value(PARAM_TEXT, 'User field shortname'))
+                              'userfields'=>new external_multiple_structure(new external_value(PARAM_TEXT, 'User field shortname'))
                              )
                     );
     }
 
-    public static function get_students($shortname, $extrauserfields) {
+    public static function get_students($shortname, $userfields) {
         global $DB;
 
         $params = self::validate_parameters(self::get_students_parameters(),
-                                            array('shortname'=>$shortname, 'extrauserfields'=>$extrauserfields));
+                                            array('shortname'=>$shortname, 'userfields'=>$userfields));
 
-        $extra_fields_str = '';
+        $user_table_fields = $DB->get_columns('user');
+
         $info_fields = array();
         $extra_fields = array();
-        if(!empty($extrauserfields)) {
-            $user_fields = array('username', 'idnumber', 'firstname', 'lastname', 'email', 'auth', 'password');
-            $user_table_fields = $DB->get_columns('user');
-            foreach($extrauserfields AS $f) {
-                if(isset($user_table_fields[$f])) {
-                    if(!in_array($f, $user_fields)) {
-                        $extra_fields_str .= ', u.'. $f;
-                        $extra_fields[] = $f;
-                    }
-                } else {
-                    $info_fields[] = $f;
+        foreach($userfields AS $f) {
+            if(isset($user_table_fields[$f])) {
+                if($f != 'id') {
+                    $extra_fields[] = $f;
                 }
+            } else {
+                $info_fields[] = $f;
             }
         }
+        $extra_fields = array_unique($extra_fields);
 
-        $sql = "SELECT DISTINCT u.id, u.username, u.idnumber, u.firstname, u.lastname, u.email, u.auth, u.password {$extra_fields_str}
+        if(empty($extra_fields)) {
+            $user_fields_str = 'u.id';
+        } else {
+            $user_fields_str = 'u.id, u.' . implode(', u.', $extra_fields);
+        }
+
+        $sql = "SELECT DISTINCT {$user_fields_str}
                   FROM {course} c
                   JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)
                   JOIN {role} r ON (r.shortname = 'student')
@@ -194,7 +197,7 @@ class local_exam_remote_external extends external_api {
         $students = $DB->get_records_sql($sql, array('shortname'=>$shortname, 'contextlevel'=>CONTEXT_COURSE));
 
         // trata campos extras contidos na tabela 'user'
-        foreach($students AS $id=>$st) {
+        foreach($students AS $st) {
             $extras = array();
             foreach($extra_fields AS $f) {
                 $obj = new stdClass();
@@ -203,19 +206,19 @@ class local_exam_remote_external extends external_api {
                 unset($st->$f);
                 $extras[] = $obj;
             }
-            $st->extrauserfields = $extras;
+            $st->userfields = $extras;
         }
 
         if(!empty($info_fields)) {
             // trata campos extras que estão nos dados adicionais dos usuários
-            foreach($students AS $id=>$st) {
+            foreach($students AS $st) {
                 profile_load_custom_fields($st);
                 foreach($info_fields AS $f) {
                     if(isset($st->profile[$f])) {
                         $obj = new stdClass();
                         $obj->shortname = $f;
                         $obj->value = $st->profile[$f];
-                        $st->extrauserfields[] = $obj;
+                        $st->userfields[] = $obj;
                     }
                 }
                 unset($st->profile);
@@ -228,14 +231,8 @@ class local_exam_remote_external extends external_api {
     public static function get_students_returns() {
         return new external_multiple_structure(
                     new external_single_structure(
-                        array('username'  => new external_value(PARAM_TEXT, 'username'),
-                              'idnumber'  => new external_value(PARAM_TEXT, 'idnumber'),
-                              'firstname' => new external_value(PARAM_TEXT, 'firstname'),
-                              'lastname'  => new external_value(PARAM_TEXT, 'lastname'),
-                              'email'     => new external_value(PARAM_TEXT, 'email'),
-                              'auth'      => new external_value(PARAM_TEXT, 'auth'),
-                              'password'  => new external_value(PARAM_TEXT, 'password'),
-                              'extrauserfields' => new external_multiple_structure(
+                        array('id'  => new external_value(PARAM_TEXT, 'User id'),
+                              'userfields' => new external_multiple_structure(
                                      new external_single_structure(array('shortname' => new external_value(PARAM_TEXT, 'shortname'),
                                                                          'value'     => new external_value(PARAM_TEXT, 'value'))))
                         )
