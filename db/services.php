@@ -63,7 +63,6 @@ $services = array(
                                       'core_group_get_course_groups',
                                       'core_group_get_group_members',
                                       'core_group_get_groupings',
-                                      'core_user_get_users_by_field',
                                      ),
                 'restrictedusers' => 1,
                 'enabled'=>1,
