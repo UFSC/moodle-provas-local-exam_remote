@@ -8,7 +8,6 @@ class local_exam_remote_external extends external_api {
     static $functions = array('editor'  => array('capability'=>'local/exam_remote:write_exam',   'only_enrolled'=>false),
                               'proctor' => array('capability'=>'local/exam_remote:conduct_exam', 'only_enrolled'=>false),
                               'monitor' => array('capability'=>'local/exam_remote:monitor_exam', 'only_enrolled'=>false),
-                              'student' => array('capability'=>'local/exam_remote:take_exam',    'only_enrolled'=>true),
                              );
 
 // --------------------------------------------------------------------------------------------------------
@@ -155,13 +154,14 @@ class local_exam_remote_external extends external_api {
     public static function get_students_parameters() {
         return new external_function_parameters(
                         array('shortname'=>new external_value(PARAM_TEXT, 'Course shortname', VALUE_DEFAULT, ''),
-                              'userfields'=>new external_multiple_structure(new external_value(PARAM_TEXT, 'User field shortname'))
+                              'userfields'=>new external_multiple_structure(new external_value(PARAM_TEXT, 'User field shortname'),
+                                                                            'Array of user fields', VALUE_DEFAULT, array())
                              )
                     );
     }
 
-    public static function get_students($shortname, $userfields) {
-        global $DB;
+    public static function get_students($shortname, $userfields = array()) {
+        global $DB, $CFG;
 
         $params = self::validate_parameters(self::get_students_parameters(),
                                             array('shortname'=>$shortname, 'userfields'=>$userfields));
@@ -190,18 +190,17 @@ class local_exam_remote_external extends external_api {
         $sql = "SELECT DISTINCT {$user_fields_str}
                   FROM {course} c
                   JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)
-                  JOIN {role} r ON (r.shortname = 'student')
-                  JOIN {role_assignments} ra ON (ra.contextid = ctx.id AND ra.roleid = r.id)
+                  JOIN {role_assignments} ra ON (ra.contextid = ctx.id AND ra.roleid IN (:roleids))
                   JOIN {user} u ON (u.id = ra.userid)
                  WHERE c.shortname = :shortname";
-        $students = $DB->get_records_sql($sql, array('shortname'=>$shortname, 'contextlevel'=>CONTEXT_COURSE));
+        $students = $DB->get_records_sql($sql, array('shortname'=>$shortname, 'contextlevel'=>CONTEXT_COURSE, 'roleids'=>$CFG->gradebookroles));
 
         // trata campos extras contidos na tabela 'user'
         foreach($students AS $st) {
             $extras = array();
             foreach($extra_fields AS $f) {
                 $obj = new stdClass();
-                $obj->shortname = $f;
+                $obj->field = $f;
                 $obj->value = $st->$f;
                 unset($st->$f);
                 $extras[] = $obj;
@@ -216,7 +215,7 @@ class local_exam_remote_external extends external_api {
                 foreach($info_fields AS $f) {
                     if(isset($st->profile[$f])) {
                         $obj = new stdClass();
-                        $obj->shortname = $f;
+                        $obj->field = $f;
                         $obj->value = $st->profile[$f];
                         $st->userfields[] = $obj;
                     }
@@ -233,8 +232,8 @@ class local_exam_remote_external extends external_api {
                     new external_single_structure(
                         array('id'  => new external_value(PARAM_TEXT, 'User id'),
                               'userfields' => new external_multiple_structure(
-                                     new external_single_structure(array('shortname' => new external_value(PARAM_TEXT, 'shortname'),
-                                                                         'value'     => new external_value(PARAM_TEXT, 'value'))))
+                                     new external_single_structure(array('field' => new external_value(PARAM_TEXT, 'Field name'),
+                                                                         'value' => new external_value(PARAM_TEXT, 'Field value'))))
                         )
                     )
         );
