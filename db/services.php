@@ -9,9 +9,9 @@ $functions = array(
                 'type'        => 'read',
         ),
 
-        'local_exam_remote_get_user_functions' => array(
+        'local_exam_remote_has_exam_capability' => array(
                 'classname'   => 'local_exam_remote_external',
-                'methodname'  => 'get_user_functions',
+                'methodname'  => 'has_exam_capability',
                 'classpath'   => 'local/exam_remote/externallib.php',
                 'description' => 'Return a list of user functions giving a username',
                 'type'        => 'read',
@@ -53,7 +53,7 @@ $functions = array(
 $services = array(
        'Moodle Exam' => array(
                 'functions' => array ('local_exam_remote_get_user_courses',
-                                      'local_exam_remote_get_user_functions',
+                                      'local_exam_remote_has_exam_capability',
                                       'local_exam_remote_get_categories',
                                       'local_exam_remote_get_students',
                                       'local_exam_remote_get_courseid',

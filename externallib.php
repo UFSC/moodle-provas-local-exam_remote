@@ -5,35 +5,33 @@ require_once($CFG->dirroot . '/user/profile/lib.php');
 
 class local_exam_remote_external extends external_api {
 
-    static $functions = array('editor'  => array('capability'=>'local/exam_remote:write_exam',   'only_enrolled'=>false),
-                              'proctor' => array('capability'=>'local/exam_remote:conduct_exam', 'only_enrolled'=>false),
-                              'monitor' => array('capability'=>'local/exam_remote:monitor_exam', 'only_enrolled'=>false),
-                             );
+    static $capabilities = array('local/exam_remote:write_exam'   => 'editor',
+                                 'local/exam_remote:conduct_exam' => 'proctor',
+                                 'local/exam_remote:monitor_exam' => 'monitor',
+                                );
 
 // --------------------------------------------------------------------------------------------------------
 
-    // Return an array with the user functions (roles) the user have int the local Moodle
-
-    public static function get_user_functions_parameters() {
+    public static function has_exam_capability_parameters() {
         return new external_function_parameters(
-                        array('username'=>new external_value(PARAM_TEXT, 'Username', VALUE_DEFAULT, ''))
+                        array('username'=>new external_value(PARAM_TEXT, 'Username'))
                    );
     }
 
-    public static function get_user_functions($username) {
+    public static function has_exam_capability($username) {
         global $DB;
 
-        $params = self::validate_parameters(self::get_user_functions_parameters(), array('username'=>$username));
+        $params = self::validate_parameters(self::has_exam_capability_parameters(), array('username'=>$username));
 
         if(!$userid = $DB->get_field('user', 'id', array('username'=>$username, 'deleted'=>0, 'suspended'=>0))) {
-            return array();
+            return false;
         }
 
-        return self::get_local_functions($userid);
+        return self::has_local_exam_capability($userid);
     }
 
-    public static function get_user_functions_returns() {
-        return new external_multiple_structure(new external_value(PARAM_TEXT, 'User function'));
+    public static function has_exam_capability_returns() {
+        return new external_value(PARAM_BOOL);
     }
 
 // --------------------------------------------------------------------------------------------------------
@@ -299,84 +297,54 @@ class local_exam_remote_external extends external_api {
 
     // Auxiliary functions
 
-    public static function get_local_courses($userid, $functions=array()) {
-        $functions = empty($functions) ? array_keys(self::$functions) : $functions;
+    public static function get_local_courses($userid) {
         $courses = array();
 
-        list($sql, $params) = self::get_sql_over_courses($userid, $functions, 'c.shortname, c.fullname, c.category as categoryid');
+        list($sql, $params) = self::get_sql_over_courses($userid, 'c.shortname, c.fullname, c.category as categoryid');
         self::get_courses_from_sql($userid, $sql, $params, $courses);
 
-        foreach($functions AS $i=>$f) {
-            if(self::$functions[$f]['only_enrolled']) {
-                unset($functions[$i]);
-            }
-        }
-
-        if(empty($functions)) {
-            return $courses;
-        }
-
-        list($sql, $params) = self::get_sql_over_categories($userid, $functions, 'c.shortname, c.fullname, c.category as categoryid');
+        list($sql, $params) = self::get_sql_over_categories($userid, 'c.shortname, c.fullname, c.category as categoryid');
         self::get_courses_from_sql($userid, $sql, $params, $courses);
 
         return $courses;
     }
 
-    public static function get_local_functions($userid) {
-        $functions = array_keys(self::$functions);
-
-        list($sql, $params) = self::get_sql_over_courses($userid, $functions);
-        $functions1 = self::get_functions_from_sql($userid, $sql, $params);
-
-        foreach(self::$functions AS $f=>$p) {
-            if($p['only_enrolled']) {
-                unset($functions[$f]);
-            }
+    public static function has_local_exam_capability($userid) {
+        list($sql, $params) = self::get_sql_over_courses($userid);
+        if(self::has_exam_capability_from_sql($userid, $sql, $params)) {
+            return true;
         }
 
-        list($sql, $params) = self::get_sql_over_categories($userid, $functions);
-        $functions2 = self::get_functions_from_sql($userid, $sql, $params);
-
-        return array_unique( array_merge($functions1, $functions2) );
+        list($sql, $params) = self::get_sql_over_categories($userid);
+        return self::has_exam_capability_from_sql($userid, $sql, $params);
     }
 
-    private function get_functions_from_sql($userid, $sql, $params) {
+    private function has_exam_capability_from_sql($userid, $sql, $params) {
         global $DB;
 
-        $capabilities = array();
-        foreach(self::$functions AS $f=>$p) {
-            $capabilities[$p['capability']] = $f;
-        }
-
-        $functions = array();
         foreach($DB->get_recordset_sql($sql, $params) AS $c) {
             $context = context_course::instance($c->id);
             if (has_capability($c->capability, $context, $userid)) {
-                $functions[$capabilities[$c->capability]] = true;
+                return true;
             }
         }
 
-        return array_keys($functions);
+        return false;
     }
 
     private function get_courses_from_sql($userid, $sql, $params, &$courses) {
         global $DB;
 
-        $capabilities = array();
-        foreach(self::$functions AS $f=>$p) {
-            $capabilities[$p['capability']] = $f;
-        }
-
         foreach($DB->get_recordset_sql($sql, $params) AS $c) {
             $context = context_course::instance($c->id);
             if (has_capability($c->capability, $context, $userid)) {
                 if(isset($courses[$c->id])) {
-                    $func = $capabilities[$c->capability];
+                    $func = self::$capabilities[$c->capability];
                     if(!in_array($func, $courses[$c->id]->functions)) {
                         $courses[$c->id]->functions[] = $func;
                     }
                 } else {
-                    $c->functions = array($capabilities[$c->capability]);
+                    $c->functions = array(self::$capabilities[$c->capability]);
                     $id = $c->id;
                     unset($c->capability);
                     unset($c->id);
@@ -388,16 +356,11 @@ class local_exam_remote_external extends external_api {
         return $courses;
     }
 
-    private static function get_sql_over_courses($userid, $functions, $extra_fields='') {
+    private static function get_sql_over_courses($userid, $extra_fields='') {
         global $DB;
 
-        $capabilities = array();
-        foreach($functions AS $f) {
-            $capabilities[] = self::$functions[$f]['capability'];
-        }
-
         $extra_fields = empty($extra_fields) ? '' : ', ' . $extra_fields;
-        list($in_sql, $params) = $DB->get_in_or_equal($capabilities, SQL_PARAMS_NAMED);
+        list($in_sql, $params) = $DB->get_in_or_equal(array_keys(self::$capabilities), SQL_PARAMS_NAMED);
 
         $sql = "SELECT DISTINCT c.id, rc.capability {$extra_fields}
                   FROM {role_assignments} ra
@@ -413,17 +376,12 @@ class local_exam_remote_external extends external_api {
         return array($sql, $params);
     }
 
-    private static function get_sql_over_categories($userid, $functions, $extra_fields='') {
+    private static function get_sql_over_categories($userid, $extra_fields='') {
         global $DB;
 
-        $capabilities = array();
-        foreach($functions AS $f) {
-            $capabilities[] = self::$functions[$f]['capability'];
-        }
-
         $extra_fields = empty($extra_fields) ? '' : ', ' . $extra_fields;
-        list($in_sql1, $params1) = $DB->get_in_or_equal($capabilities, SQL_PARAMS_NAMED);
-        list($in_sql2, $params2) = $DB->get_in_or_equal($capabilities, SQL_PARAMS_NAMED);
+        list($in_sql1, $params1) = $DB->get_in_or_equal(array_keys(self::$capabilities), SQL_PARAMS_NAMED);
+        list($in_sql2, $params2) = $DB->get_in_or_equal(array_keys(self::$capabilities), SQL_PARAMS_NAMED);
         $params = array_merge($params1, $params2);
 
         $sql = "SELECT c.id, rc.capability {$extra_fields}
