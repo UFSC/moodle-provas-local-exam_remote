@@ -185,13 +185,27 @@ class local_exam_remote_external extends external_api {
             $user_fields_str = 'u.id, u.' . implode(', u.', $extra_fields);
         }
 
+        if(!$courseid = $DB->get_field('course', 'id', array('shortname'=>$shortname))) {
+            return array();
+        }
+
+        $context = context_course::instance($courseid);
+        list($sql, $params) = get_enrolled_sql($context, null, null, true);
+        list($sql_role, $params_role) = $DB->get_in_or_equal(explode(',', $CFG->gradebookroles), SQL_PARAMS_NAMED);
+        $params = array_merge($params, $params_role);
+
         $sql = "SELECT DISTINCT {$user_fields_str}
                   FROM {course} c
                   JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)
-                  JOIN {role_assignments} ra ON (ra.contextid = ctx.id AND ra.roleid IN (:roleids))
+                  JOIN {role_assignments} ra ON (ra.contextid = ctx.id AND ra.roleid {$sql_role})
                   JOIN {user} u ON (u.id = ra.userid)
-                 WHERE c.shortname = :shortname";
-        $students = $DB->get_records_sql($sql, array('shortname'=>$shortname, 'contextlevel'=>CONTEXT_COURSE, 'roleids'=>$CFG->gradebookroles));
+                  JOIN ($sql) j ON (j.id = u.id)
+                 WHERE c.id = :courseid";
+        $params['courseid'] = $courseid;
+        $params['contextlevel'] = CONTEXT_COURSE;
+        $params['roleids'] = $CFG->gradebookroles;
+
+        $students = $DB->get_records_sql($sql, $params);
 
         // trata campos extras contidos na tabela 'user'
         foreach($students AS $st) {
@@ -297,14 +311,125 @@ class local_exam_remote_external extends external_api {
 
     // Auxiliary functions
 
+    public static function get_local_students($shortname, $userfields = array()) {
+        global $DB, $CFG;
+
+        $params = self::validate_parameters(self::get_students_parameters(),
+                                            array('shortname'=>$shortname, 'userfields'=>$userfields));
+
+        $user_table_fields = $DB->get_columns('user');
+
+        $info_fields = array();
+        $extra_fields = array();
+        foreach($userfields AS $f) {
+            if(isset($user_table_fields[$f])) {
+                if($f != 'id') {
+                    $extra_fields[] = $f;
+                }
+            } else {
+                $info_fields[] = $f;
+            }
+        }
+        $extra_fields = array_unique($extra_fields);
+
+        if(empty($extra_fields)) {
+            $user_fields_str = 'u.id';
+        } else {
+            $user_fields_str = 'u.id, u.' . implode(', u.', $extra_fields);
+        }
+
+        if(!$courseid = $DB->get_field('course', 'id', array('shortname'=>$shortname))) {
+            return array();
+        }
+
+        $context = context_course::instance($courseid);
+        list($sql, $params) = get_enrolled_sql($context, null, null, true);
+        list($sql_role, $params_role) = $DB->get_in_or_equal(explode(',', $CFG->gradebookroles), SQL_PARAMS_NAMED);
+        $params = array_merge($params, $params_role);
+
+        $sql = "SELECT DISTINCT {$user_fields_str}
+                  FROM {course} c
+                  JOIN {context} ctx ON (ctx.instanceid = c.id AND ctx.contextlevel = :contextlevel)
+                  JOIN {role_assignments} ra ON (ra.contextid = ctx.id AND ra.roleid {$sql_role})
+                  JOIN {user} u ON (u.id = ra.userid)
+                  JOIN ($sql) j ON (j.id = u.id)
+                 WHERE c.id = :courseid";
+        $params['courseid'] = $courseid;
+        $params['contextlevel'] = CONTEXT_COURSE;
+        $params['roleids'] = $CFG->gradebookroles;
+
+        $students = $DB->get_records_sql($sql, $params);
+
+        // trata campos extras contidos na tabela 'user'
+        foreach($students AS $st) {
+            $extras = array();
+            foreach($extra_fields AS $f) {
+                $obj = new stdClass();
+                $obj->field = $f;
+                $obj->value = $st->$f;
+                unset($st->$f);
+                $extras[] = $obj;
+            }
+            $st->userfields = $extras;
+        }
+
+        if(!empty($info_fields)) {
+            // trata campos extras que estão nos dados adicionais dos usuários
+            foreach($students AS $st) {
+                profile_load_custom_fields($st);
+                foreach($info_fields AS $f) {
+                    if(isset($st->profile[$f])) {
+                        $obj = new stdClass();
+                        $obj->field = $f;
+                        $obj->value = $st->profile[$f];
+                        $st->userfields[] = $obj;
+                    }
+                }
+                unset($st->profile);
+            }
+        }
+
+        return $students;
+    }
+
     public static function get_local_courses($userid) {
+        global $DB, $CFG;
+
         $courses = array();
+        $course_fields = 'c.shortname, c.fullname, c.category as categoryid';
 
-        list($sql, $params) = self::get_sql_over_courses($userid, 'c.shortname, c.fullname, c.category as categoryid');
+        list($sql, $params) = self::get_sql_over_courses($userid, $course_fields);
         self::get_courses_from_sql($userid, $sql, $params, $courses);
 
-        list($sql, $params) = self::get_sql_over_categories($userid, 'c.shortname, c.fullname, c.category as categoryid');
+        list($sql, $params) = self::get_sql_over_categories($userid, $course_fields);
         self::get_courses_from_sql($userid, $sql, $params, $courses);
+
+        list($sql, $params) = $DB->get_in_or_equal(explode(',', $CFG->gradebookroles), SQL_PARAMS_NAMED);
+        $sql = "SELECT ctx.instanceid as courseid
+                  FROM {role_assignments} ra
+                  JOIN {context} ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextlevel)
+                 WHERE ra.userid = :userid
+                   AND ra.roleid {$sql}";
+        $params['userid'] = $userid;
+        $params['contextlevel'] = CONTEXT_COURSE;
+        $ras = $DB->get_records_sql($sql, $params);
+
+        foreach(enrol_get_all_users_courses($userid, true) AS $c) {
+            if($c->visible && isset($ras[$c->id])) {
+                if(isset($courses[$c->id])) {
+                    if(!in_array('student', $courses[$c->id]->functions)) {
+                        $courses[$c->id]->functions[] = 'student';
+                    }
+                } else {
+                    $course = new stdclass();
+                    $course->shortname = $c->shortname;
+                    $course->fullname = $c->fullname;
+                    $course->categoryid = $c->category;
+                    $course->functions = array('student');
+                    $courses[$c->id] = $course;
+                }
+            }
+        }
 
         return $courses;
     }
@@ -332,7 +457,7 @@ class local_exam_remote_external extends external_api {
         return false;
     }
 
-    private function get_courses_from_sql($userid, $sql, $params, &$courses) {
+    private static function get_courses_from_sql($userid, $sql, $params, &$courses) {
         global $DB;
 
         foreach($DB->get_recordset_sql($sql, $params) AS $c) {
