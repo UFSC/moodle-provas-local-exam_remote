@@ -121,7 +121,7 @@ class local_exam_remote_external extends external_api {
         }
 
         $str_categoryids = implode(',', $categoryids);
-        $sql = "SELECT cc2.id, cc2.name, cc2.path
+        $sql = "SELECT DISTINCT cc2.id, cc2.name, cc2.path
                   FROM {course_categories} cc
                   JOIN {course_categories} cc2 ON (cc2.id = cc.id OR cc.path LIKE CONCAT('%/',cc2.id,'/%') )
                  WHERE cc.id IN ({$str_categoryids})
