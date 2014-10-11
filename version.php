@@ -12,6 +12,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+$plugin->version   = 2014101100;
+$plugin->requires  = 2013111800; //Moodle 2.6
 $plugin->component = 'local_exam_remote';
-$plugin->version  = 2014081201;
-$plugin->requires = 2013111802;
