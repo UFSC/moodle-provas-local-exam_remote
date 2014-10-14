@@ -13,13 +13,20 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+//
+// Este bloco é parte do Moodle Provas - http://tutoriais.moodle.ufsc.br/provas/
+// Este projeto é financiado pela
+// UAB - Universidade Aberta do Brasil (http://www.uab.capes.gov.br/)
+// e é distribuído sob os termos da "GNU General Public License",
+// como publicada pela "Free Software Foundation".
 
 /**
- * Web service template plugin related strings
- * @package   localwstemplate
- * @copyright 2011 Moodle Pty Ltd (http://moodle.com)
- * @author    Jerome Mouneyrac
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Plugin strings.
+ *
+ * @package    local_exam_remote
+ * @author     Antonio Carlos Mariani
+ * @copyright  2010 onwards Universidade Federal de Santa Catarina (http://www.ufsc.br)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 $string['pluginname'] = 'WS para comunicação com o Moodle Provas';
