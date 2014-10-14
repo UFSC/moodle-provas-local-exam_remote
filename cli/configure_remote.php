@@ -49,7 +49,7 @@ assign_capability('moodle/restore:restoreactivity', CAP_ALLOW, $roleid, $context
 role_assign($roleid, $user->id, $context->id);
 
 // ----------------------------------------------------------------------------------
-// ajusta configurações
+// Habilita o uso de webservices
 
 $configs = array(
                  array('enablewebservices', true),
