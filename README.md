@@ -1,7 +1,7 @@
 local-exam_remote
 =================
 
-Módulo de autorização para realização de provas.
+Módulo que fornece os webservices necessários no "Moodle de origem" para realização de provas.
 
 Moodle Provas
 =============
@@ -17,7 +17,7 @@ Além deste plugin, mais dois plugins compõem o pacote do Moodle Provas:
 * block-exam_actions : Bloco que serve de interface para as ações sobre as provas
 * local-exam_authorization : Bloco que trata da autorização de usuários ao ambiente de provas
 
-Foi desenvolvido também um Live CD, derivado do Ubuntu, para
+Foi desenvolvido também um "CD de Provas", derivado do Ubuntu, para
 restringir o acesso aos recursos dos computadores utilizados
 para realização da provas.
 
@@ -38,14 +38,14 @@ Os outros plugins podem ser encontrados em:
     https://gitlab.setic.ufsc.br/moodle-ufsc/local-exam_authorization
     https://gitlab.setic.ufsc.br/moodle-ufsc/block-exam_actions
 
-O código e instruções para gravaçã do Live CD podem ser encontrados em:
+O código e instruções para gravação do "CD de Provas" podem ser encontrados em:
 
     https://gitlab.setic.ufsc.br/provas-online/livecd-provas
 
 Instalação
 ==========
 
-Este plugin deve ser instalado nos "Moodles de origem".
+Este plugin deve ser instalado no "Moodle de origem" (um ou mais).
 Ele serve para criar os webservices necessários para importação
 dos usuários, disponibilização de provas e cópia das provas
 de do ambiente de provas para o Moodle de origem.
@@ -63,6 +63,6 @@ Há um script em cli/configure_remote.php que realizar diversas operações de c
 Licença
 =======
 
-Você deve ter recebido uma cópia da GNU General Public License
-com este módulo, no arquivo COPYING.txt.
-Caso negativo, visite <http://www.gnu.org/licenses/>.
+Este código-fonte é distribuído sob licença GNU General Plublic License
+Uma cópia desta licença está no arquivo COPYING.txt
+Ela também pode ser vista em <http://www.gnu.org/licenses/>.
