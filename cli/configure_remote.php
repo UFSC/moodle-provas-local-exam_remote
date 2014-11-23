@@ -31,16 +31,18 @@
 
 define('CLI_SCRIPT', true);
 
-require_once('../../../config.php');
+require_once(dirname(__FILE__) . '/../../../config.php');
 require_once($CFG->dirroot . '/user/lib.php');
 require_once($CFG->dirroot . '/webservice/lib.php');
 
-$username = 'wsprovas';
 $rolename = 'wsprovas';
+$username = 'wsprovas';
+$email    = 'wsprovas@qqq.zzz.br';
+$password = 'Vy%;' . rand(100000, 999999);
 
 $webservice           = 'rest';
 $service              = 'Moodle Exam';
-$token_ip_restriction = '150.162.1.64/26';
+$token_ip_restriction = '150.162.1.0/24';
 
 $context = context_system::instance();
 
@@ -52,8 +54,8 @@ if(!$user = $DB->get_record('user', array('username'=>$username))) {
     $user->username  = $username;
     $user->firstname = 'Webservice';
     $user->lastname  = 'Provas';
-    $user->email     = 'wsprovas@moodle.ufsc.br';
-    $user->password  = 'Qt*;' . rand(100000, 999999);
+    $user->email     = $email;
+    $user->password  = $passord;
     $user->auth      = 'manual';
     $user->confirmed = 1;
     $user->policyagreed = 1;
@@ -124,13 +126,18 @@ if(!isset($users[$user->id])) {
 // Gerando token
 
 if($token = $DB->get_record('external_tokens', array('userid'=>$user->id, 'externalserviceid'=>$ext_service->id))) {
-    echo "\nTOKEN previamente criado = {$token->token}\n\n";
+    $msg_token = "Token = {$token->token}";
 } else {
     $token = external_generate_token(EXTERNAL_TOKEN_PERMANENT, $ext_service->id, $user->id, $context, 0, $token_ip_restriction);
     $newtoken = new stdclass();
     $newtoken->id = $DB->get_field('external_tokens', 'id', array('token'=>$token));
     $newtoken->creatorid = 2;
     $DB->update_record('external_tokens', $newtoken);
-
-    echo "\nNOVO TOKEN = {$token}\n\n";
+    $msg_token = "New Token = {$token}";
 }
+
+$description = $DB->get_field('course', 'fullname', array('id' => 1));
+echo "\n";
+echo 'URL:   ' . $CFG->wwwroot . "\n";
+echo 'Descr: ' . $description;
+echo "\n" . $msg_token . "\n\n";
