@@ -42,7 +42,7 @@ $password = 'Vy%;' . rand(100000, 999999);
 
 $webservice           = 'rest';
 $service              = 'Moodle Exam';
-$token_ip_restriction = '150.162.1.0/24';
+$token_ip_restriction = '127.0.0.1/24'; // preencha com um ip ou máscara de ip para restringir o acesso
 
 $context = context_system::instance();
 
