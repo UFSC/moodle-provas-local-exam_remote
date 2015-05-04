@@ -31,7 +31,6 @@ $token = '???';
 function call_ws($functionname, $params) {
     global $domainname, $token;
 
-    header('Content-Type: text/plain');
     $serverurl = $domainname . '/webservice/rest/server.php' .
                                 '?wstoken=' . $token .
                                 '&wsfunction=' . $functionname .

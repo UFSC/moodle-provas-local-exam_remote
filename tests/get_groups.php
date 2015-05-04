@@ -52,7 +52,9 @@ $grs = call_ws('core_group_get_groupings', $params);
 echo "\nGROUPINGS:\n";
 foreach($grs AS $gr) {
     echo "- Grouping: $gr->id - $gr->name\n";
-    foreach($gr->groups AS $g) {
-        echo "     group: $g->id - $g->name\n";
+    if(isset($gr->groups)) {
+        foreach($gr->groups AS $g) {
+            echo "     group: $g->id - $g->name\n";
+        }
     }
 }

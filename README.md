@@ -1,7 +1,12 @@
 local-exam_remote
 =================
 
-Módulo que fornece os webservices necessários no "Moodle de origem" para realização de provas.
+Plugin local que fornece os webservices necessários no "Moodle de origem" para realização de provas.
+
+Serve para criar os webservices necessários para importação
+dos usuários, disponibilização de provas e cópia das provas
+do ambiente de provas para o Moodle de origem.
+
 
 Moodle Provas
 =============
@@ -45,10 +50,13 @@ O código e instruções para gravação do "CD de Provas" podem ser encontrados
 Instalação
 ==========
 
-Este plugin deve ser instalado no "Moodle de origem" (um ou mais).
-Ele serve para criar os webservices necessários para importação
-dos usuários, disponibilização de provas e cópia das provas
-de do ambiente de provas para o Moodle de origem.
+* Este plugin deve ser instalado no "Moodle de origem" (um ou mais).
+* Este plugin é do tipo local, logo deve ser instalado no diretório "local", na raiz do seu moodle.
+* O nome diretório deste plugin dentro do diretório "local" deve ser "exam_remote" (sem as aspas).
+* Após colocar o código do plugin no diretório correto, visite o seu Moodle como administrador para finalizar a instalação.
+
+Pós-instalação
+==============
 
 Há um script em cli/configure_remote.php que realizar diversas operações de configuração, dentre elas:
 
@@ -59,6 +67,13 @@ Há um script em cli/configure_remote.php que realizar diversas operações de c
 * Ativa protocolo (REST, por padrão)
 * Adiciona usuário ao serviço
 * Gera token
+
+Para executar este script través da linha de comando, você vai precisar do "php-cli" (php command line interface).
+Com o php-cli instalado, você pode acessar o diretório do plugin e executar o script com os seguintes comandos:
+
+    cd moodle/local/exam_remote
+    php cli/configure_remote.php
+
 
 Licença
 =======

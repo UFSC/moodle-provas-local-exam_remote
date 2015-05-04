@@ -41,12 +41,23 @@ class local_exam_remote_external extends external_api {
 
 // --------------------------------------------------------------------------------------------------------
 
+    /**
+     * Describes the parameters for has_exam_capability.
+     *
+     * @return external_external_function_parameters
+     */
     public static function has_exam_capability_parameters() {
         return new external_function_parameters(
                         array('username'=>new external_value(PARAM_TEXT, 'Username'))
                    );
     }
 
+    /**
+     * Returns true if the user has one of the self::$capabilities over any visible course. Returns false otherwise.
+     *
+     * @param String $username
+     * @return boolean
+     */
     public static function has_exam_capability($username) {
         global $DB;
 
@@ -59,12 +70,22 @@ class local_exam_remote_external extends external_api {
         return self::has_local_exam_capability($userid);
     }
 
+    /**
+     * Describes the has_exam_capability return value.
+     *
+     * @return external_value
+     */
     public static function has_exam_capability_returns() {
         return new external_value(PARAM_BOOL);
     }
 
 // --------------------------------------------------------------------------------------------------------
 
+    /**
+     * Describes the parameters for get_courseid.
+     *
+     * @return external_external_function_parameters
+     */
     public static function get_courseid_parameters() {
         return new external_function_parameters(
                         array('key'  =>new external_value(PARAM_TEXT, 'Course key: shortname or idnumber'),
@@ -72,6 +93,13 @@ class local_exam_remote_external extends external_api {
                    );
     }
 
+    /**
+     * Returns the course id given ists shortname or idnumber. Returns -1 if there are more then one course with the given pair $key/value.
+     * Returns 0 the there isn't such course.
+     *
+     * @param String $username
+     * @return int
+     */
     public static function get_courseid($key, $value) {
         global $DB;
 
@@ -95,12 +123,22 @@ class local_exam_remote_external extends external_api {
         }
     }
 
+    /**
+     * Describes the get_courseid return value.
+     *
+     * @return external_value
+     */
     public static function get_courseid_returns() {
         return new external_value(PARAM_INT, 'Course id, 0 if course does not exist, or -1 if there are more than one course');
     }
 
 // --------------------------------------------------------------------------------------------------------
 
+    /**
+     * Describes the parameters for get_user_courses.
+     *
+     * @return external_external_function_parameters
+     */
     public static function get_user_courses_parameters() {
         return new external_function_parameters(
                         array('username'=>new external_value(PARAM_TEXT, 'Username', VALUE_DEFAULT, ''))
@@ -119,6 +157,11 @@ class local_exam_remote_external extends external_api {
         return self::get_local_courses($userid);
     }
 
+    /**
+     * Describes the get_user_courses return value.
+     *
+     * @return external_multiple_structure
+     */
     public static function get_user_courses_returns() {
         return new external_multiple_structure(
                       new external_single_structure(
@@ -134,6 +177,11 @@ class local_exam_remote_external extends external_api {
 
 // --------------------------------------------------------------------------------------------------------
 
+    /**
+     * Describes the parameters for get_categories.
+     *
+     * @return external_external_function_parameters
+     */
     public static function get_categories_parameters() {
         return new external_function_parameters(
                         array('categoryids'=>new external_multiple_structure(new external_value(PARAM_INT, 'Category id')))
@@ -165,6 +213,11 @@ class local_exam_remote_external extends external_api {
         return array_values($cats);
     }
 
+    /**
+     * Describes the get_categories_returns return value.
+     *
+     * @return external_multiple_structure
+     */
     public static function get_categories_returns() {
         return new external_multiple_structure(
                      new external_single_structure(
@@ -178,6 +231,11 @@ class local_exam_remote_external extends external_api {
 
 // --------------------------------------------------------------------------------------------------------
 
+    /**
+     * Describes the parameters for get_students.
+     *
+     * @return external_external_function_parameters
+     */
     public static function get_students_parameters() {
         return new external_function_parameters(
                         array('shortname'=>new external_value(PARAM_TEXT, 'Course shortname', VALUE_DEFAULT, ''),
@@ -268,6 +326,11 @@ class local_exam_remote_external extends external_api {
         return $students;
     }
 
+    /**
+     * Describes the get_students return value.
+     *
+     * @return external_multiple_structure
+     */
     public static function get_students_returns() {
         return new external_multiple_structure(
                     new external_single_structure(
@@ -282,6 +345,11 @@ class local_exam_remote_external extends external_api {
 
 // --------------------------------------------------------------------------------------------------------
 
+    /**
+     * Describes the parameters for restore_activity.
+     *
+     * @return external_external_function_parameters
+     */
     public static function restore_activity_parameters() {
         return new external_function_parameters(
                 array('shortname' => new external_value(PARAM_TEXT, 'Shortname da turma', VALUE_DEFAULT, ''),
@@ -332,6 +400,11 @@ class local_exam_remote_external extends external_api {
 
     }
 
+    /**
+     * Describes the restore_activity return value.
+     *
+     * @return external_value
+     */
     public static function restore_activity_returns() {
         return new external_value(PARAM_TEXT, 'Resultado da restauração. OK se a restauração for realizada com sucesso');
     }
@@ -434,13 +507,13 @@ class local_exam_remote_external extends external_api {
         self::get_courses_from_sql($userid, $sql, $params, $courses);
 
         list($sql, $params) = $DB->get_in_or_equal(explode(',', $CFG->gradebookroles), SQL_PARAMS_NAMED);
-        $sql = "SELECT ctx.instanceid as courseid
+        $sql = "SELECT DISTINCT ctx.instanceid as courseid, ctx.instanceid
                   FROM {role_assignments} ra
-                  JOIN {context} ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextlevel)
+                  JOIN {context} ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextcourselevel)
                  WHERE ra.userid = :userid
                    AND ra.roleid {$sql}";
         $params['userid'] = $userid;
-        $params['contextlevel'] = CONTEXT_COURSE;
+        $params['contextcourselevel'] = CONTEXT_COURSE;
         $ras = $DB->get_records_sql($sql, $params);
 
         foreach(enrol_get_all_users_courses($userid, true) AS $c) {
@@ -464,11 +537,13 @@ class local_exam_remote_external extends external_api {
     }
 
     public static function has_local_exam_capability($userid) {
+        // Iterates over the course where the user is enrolled
         list($sql, $params) = self::get_sql_over_courses($userid);
         if(self::has_exam_capability_from_sql($userid, $sql, $params)) {
             return true;
         }
 
+        // Iterates over the course under the categories where the user has some role
         list($sql, $params) = self::get_sql_over_categories($userid);
         return self::has_exam_capability_from_sql($userid, $sql, $params);
     }
@@ -510,63 +585,104 @@ class local_exam_remote_external extends external_api {
         return $courses;
     }
 
-    private static function get_sql_over_courses($userid, $extra_fields='') {
+    /**
+     * Retorna código sql para obtenção dos cursos visíveis (e correspondentes capabilities) nos quais o usuário possui alguma atribuição explícita
+     * de papel que possui uma ou mais das 'capabilities' relacionadas a provas. As capabilities podem ter sido definidas globalmente no papel
+     * ou atribuidas localmente no curso.
+     *
+     * @param int $userid
+     * @param String $course_extra_fields
+     * @return String sql code
+     */
+    private static function get_sql_over_courses($userid, $course_extra_fields='') {
         global $DB;
 
-        $extra_fields = empty($extra_fields) ? '' : ', ' . $extra_fields;
-        list($in_sql, $params) = $DB->get_in_or_equal(array_keys(self::$capabilities), SQL_PARAMS_NAMED);
+        $course_extra_fields = empty($course_extra_fields) ? '' : ', ' . $course_extra_fields;
 
-        $sql = "SELECT DISTINCT c.id, rc.capability {$extra_fields}
-                  FROM {role_assignments} ra
-                  JOIN {context} ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextlevel)
-                  JOIN {role_capabilities} rc ON (rc.roleid = ra.roleid AND (rc.contextid = 1 OR rc.contextid = ra.contextid))
-                  JOIN {course} c ON (c.id = ctx.instanceid AND c.visible = 1)
-                 WHERE ra.userid = :userid
-                   AND rc.capability {$in_sql}
-                   AND rc.permission = 1";
-        $params['userid'] = $userid;
-        $params['contextlevel'] = CONTEXT_COURSE;
-
-        return array($sql, $params);
-    }
-
-    private static function get_sql_over_categories($userid, $extra_fields='') {
-        global $DB;
-
-        $extra_fields = empty($extra_fields) ? '' : ', ' . $extra_fields;
-        list($in_sql1, $params1) = $DB->get_in_or_equal(array_keys(self::$capabilities), SQL_PARAMS_NAMED);
-        list($in_sql2, $params2) = $DB->get_in_or_equal(array_keys(self::$capabilities), SQL_PARAMS_NAMED);
+        list($cap_sql1, $params1) = $DB->get_in_or_equal(array_keys(self::$capabilities), SQL_PARAMS_NAMED);
+        list($cap_sql2, $params2) = $DB->get_in_or_equal(array_keys(self::$capabilities), SQL_PARAMS_NAMED);
         $params = array_merge($params1, $params2);
 
-        $sql = "SELECT c.id, rc.capability {$extra_fields}
+        $sql = "SELECT c.id, rc.capability {$course_extra_fields}
                   FROM {role_assignments} ra
-                  JOIN {context} ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextlevel1)
-                  JOIN {course_categories} cc ON (cc.id = ctx.instanceid AND cc.visible = 1)
-                  JOIN {role_capabilities} rc ON (rc.roleid = ra.roleid AND (rc.contextid = 1 OR rc.contextid = ctx.id))
-                  JOIN {course_categories} ccc ON (ccc.depth >= cc.depth AND (ccc.id = cc.id OR ccc.path LIKE CONCAT('%/',cc.id, '/%')) AND ccc.visible = 1)
-                  JOIN {course} c ON (c.category = ccc.id AND c.visible = 1)
+                  JOIN {context} ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextcourselevel1)
+                  JOIN {role_capabilities} rc ON (rc.roleid = ra.roleid AND (rc.contextid = 1 OR rc.contextid = ra.contextid))
+                  JOIN {course} c ON (c.id = ctx.instanceid AND c.visible = 1)
                  WHERE ra.userid = :userid1
-                   AND rc.capability {$in_sql1}
+                   AND rc.capability {$cap_sql1}
                    AND rc.permission = 1
 
                  UNION
 
-                SELECT c.id, rc.capability {$extra_fields}
+                SELECT c.id, rc.capability {$course_extra_fields}
                   FROM {role_assignments} ra
-                  JOIN {context} ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextlevel2)
-                  JOIN {course_categories} cc ON (cc.id = ctx.instanceid AND cc.visible = 1)
-                  JOIN {course_categories} ccsub ON (ccsub.path LIKE CONCAT('%/',cc.id, '/%') AND ccsub.visible = 1)
-                  JOIN {context} ctxsub ON (ctxsub.contextlevel = ctx.contextlevel AND ctxsub.instanceid = ccsub.id)
-                  JOIN {role_capabilities} rc ON (rc.roleid = ra.roleid AND rc.contextid = ctxsub.id)
-                  JOIN {course_categories} ccc ON (ccc.depth >= ccsub.depth AND (ccc.id = ccsub.id OR ccc.path LIKE CONCAT('%/',ccsub.id, '/%')) AND ccc.visible = 1)
-                  JOIN {course} c ON (c.category = ccc.id AND c.visible = 1)
+                  JOIN {context} ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextcourselevel2)
+                  JOIN {course} c ON (c.id = ctx.instanceid AND c.visible = 1)
+                  JOIN {course_categories} cc ON (cc.id = c.category AND cc.visible = 1)
+                  JOIN {context} ctxc ON (ctxc.instanceid = cc.id AND ctxc.contextlevel = :contextcoursecatlevel1)
+                  JOIN {context} ctxs ON (ctxs.id = ctxc.id OR (ctxs.contextlevel = :contextcoursecatlevel2 AND ctxs.depth < ctxc.depth AND ctxc.path LIKE CONCAT(ctxs.path, '/%')))
+                  JOIN {role_capabilities} rc ON (rc.roleid = ra.roleid AND rc.contextid > 1 AND rc.contextid = ctxs.id)
                  WHERE ra.userid = :userid2
-                   AND rc.capability {$in_sql2}
+                   AND rc.capability {$cap_sql2}
                    AND rc.permission = 1";
+
         $params['userid1'] = $userid;
         $params['userid2'] = $userid;
-        $params['contextlevel1'] = CONTEXT_COURSECAT;
-        $params['contextlevel2'] = CONTEXT_COURSECAT;
+        $params['contextcourselevel1'] = CONTEXT_COURSE;
+        $params['contextcourselevel2'] = CONTEXT_COURSE;
+        $params['contextcoursecatlevel1'] = CONTEXT_COURSECAT;
+        $params['contextcoursecatlevel2'] = CONTEXT_COURSECAT;
+
+        return array($sql, $params);
+    }
+
+    private static function get_sql_over_categories($userid, $course_extra_fields='') {
+        global $DB;
+
+        $course_extra_fields = empty($course_extra_fields) ? '' : ', ' . $course_extra_fields;
+
+        list($cap_sql1, $params1) = $DB->get_in_or_equal(array_keys(self::$capabilities), SQL_PARAMS_NAMED);
+        list($cap_sql2, $params2) = $DB->get_in_or_equal(array_keys(self::$capabilities), SQL_PARAMS_NAMED);
+        $params = array_merge($params1, $params2);
+
+        $sql = "SELECT c.id, rc.capability {$course_extra_fields}
+                  FROM role_assignments ra
+                  JOIN context ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextcatlevel1)
+                  JOIN context ctxs ON (ctxs.id = ctx.id OR (ctxs.contextlevel = :contextcatlevel2 AND ctxs.depth > ctx.depth AND ctxs.path LIKE CONCAT(ctx.path, '/%')))
+                  JOIN role_capabilities rc ON (rc.roleid = ra.roleid)
+                  JOIN course_categories cc ON (cc.id = ctxs.instanceid AND cc.visible)
+                  JOIN course c ON (c.category = cc.id AND c.visible)
+                 WHERE ra.userid = :userid1
+                   AND rc.capability {$cap_sql1}
+                   AND rc.contextid = 1
+                   AND rc.permission = 1
+
+                 UNION
+
+                SELECT c.id, rcc.capability {$course_extra_fields}
+                  FROM role_assignments ra
+                  JOIN context ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextcatlevel3)
+                  JOIN context ctxs ON (ctxs.id = ctx.id OR (ctxs.contextlevel = :contextcatlevel4 AND ctxs.path LIKE CONCAT(ctx.path, '/%')))
+                  JOIN (SELECT rc.capability, rc.roleid, ctxs.id as contextid
+                          FROM role_capabilities rc
+                          JOIN context ctx ON (ctx.id = rc.contextid AND ctx.contextlevel = :contextcatlevel5)
+                          JOIN context ctxs ON (ctxs.id = ctx.id OR (ctxs.contextlevel = :contextcatlevel6 AND ctxs.depth > ctx.depth AND ctxs.path LIKE CONCAT(ctx.path, '/%')))
+                         WHERE rc.capability {$cap_sql2}
+                           AND rc.permission = 1
+                           AND rc.contextid > 1) rcc
+                    ON (rcc.contextid = ctxs.id AND rcc.roleid = ra.roleid)
+                  JOIN course_categories cc ON (cc.id = ctxs.instanceid AND cc.visible)
+                  JOIN course c ON (c.category = cc.id AND c.visible)
+                 WHERE ra.userid = :userid2";
+
+        $params['userid1'] = $userid;
+        $params['userid2'] = $userid;
+        $params['contextcatlevel1'] = CONTEXT_COURSECAT;
+        $params['contextcatlevel2'] = CONTEXT_COURSECAT;
+        $params['contextcatlevel3'] = CONTEXT_COURSECAT;
+        $params['contextcatlevel4'] = CONTEXT_COURSECAT;
+        $params['contextcatlevel5'] = CONTEXT_COURSECAT;
+        $params['contextcatlevel6'] = CONTEXT_COURSECAT;
 
         return array($sql, $params);
     }
