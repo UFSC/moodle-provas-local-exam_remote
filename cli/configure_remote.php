@@ -55,7 +55,7 @@ if(!$user = $DB->get_record('user', array('username'=>$username))) {
     $user->firstname = 'Webservice';
     $user->lastname  = 'Provas';
     $user->email     = $email;
-    $user->password  = $passord;
+    $user->password  = $password;
     $user->auth      = 'manual';
     $user->confirmed = 1;
     $user->policyagreed = 1;
