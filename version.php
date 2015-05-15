@@ -29,6 +29,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$plugin->version   = 2014101100;
+$plugin->version   = 2015051500;
 $plugin->requires  = 2013111800; //Moodle 2.6
 $plugin->component = 'local_exam_remote';
