@@ -1,5 +1,5 @@
 {
-    "name": "moodle-ufsc/local-exam_remote",
+    "name": "moodle-provas/local-exam_remote",
     "description": "plugin de moodle remoto do moodle provas",
     "license": "GPLv3",
     "type": "moodle-local",
