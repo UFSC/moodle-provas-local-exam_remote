@@ -646,12 +646,12 @@ class local_exam_remote_external extends external_api {
         $params = array_merge($params1, $params2);
 
         $sql = "SELECT c.id, rc.capability {$course_extra_fields}
-                  FROM role_assignments ra
-                  JOIN context ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextcatlevel1)
-                  JOIN context ctxs ON (ctxs.id = ctx.id OR (ctxs.contextlevel = :contextcatlevel2 AND ctxs.depth > ctx.depth AND ctxs.path LIKE CONCAT(ctx.path, '/%')))
-                  JOIN role_capabilities rc ON (rc.roleid = ra.roleid)
-                  JOIN course_categories cc ON (cc.id = ctxs.instanceid AND cc.visible)
-                  JOIN course c ON (c.category = cc.id AND c.visible)
+                  FROM {role_assignments} ra
+                  JOIN {context} ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextcatlevel1)
+                  JOIN {context} ctxs ON (ctxs.id = ctx.id OR (ctxs.contextlevel = :contextcatlevel2 AND ctxs.depth > ctx.depth AND ctxs.path LIKE CONCAT(ctx.path, '/%')))
+                  JOIN {role_capabilities} rc ON (rc.roleid = ra.roleid)
+                  JOIN {course_categories} cc ON (cc.id = ctxs.instanceid AND cc.visible)
+                  JOIN {course} c ON (c.category = cc.id AND c.visible)
                  WHERE ra.userid = :userid1
                    AND rc.capability {$cap_sql1}
                    AND rc.contextid = 1
@@ -660,19 +660,19 @@ class local_exam_remote_external extends external_api {
                  UNION
 
                 SELECT c.id, rcc.capability {$course_extra_fields}
-                  FROM role_assignments ra
-                  JOIN context ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextcatlevel3)
-                  JOIN context ctxs ON (ctxs.id = ctx.id OR (ctxs.contextlevel = :contextcatlevel4 AND ctxs.path LIKE CONCAT(ctx.path, '/%')))
+                  FROM {role_assignments} ra
+                  JOIN {context} ctx ON (ctx.id = ra.contextid AND ctx.contextlevel = :contextcatlevel3)
+                  JOIN {context} ctxs ON (ctxs.id = ctx.id OR (ctxs.contextlevel = :contextcatlevel4 AND ctxs.path LIKE CONCAT(ctx.path, '/%')))
                   JOIN (SELECT rc.capability, rc.roleid, ctxs.id as contextid
-                          FROM role_capabilities rc
-                          JOIN context ctx ON (ctx.id = rc.contextid AND ctx.contextlevel = :contextcatlevel5)
-                          JOIN context ctxs ON (ctxs.id = ctx.id OR (ctxs.contextlevel = :contextcatlevel6 AND ctxs.depth > ctx.depth AND ctxs.path LIKE CONCAT(ctx.path, '/%')))
+                          FROM {role_capabilities} rc
+                          JOIN {context} ctx ON (ctx.id = rc.contextid AND ctx.contextlevel = :contextcatlevel5)
+                          JOIN {context} ctxs ON (ctxs.id = ctx.id OR (ctxs.contextlevel = :contextcatlevel6 AND ctxs.depth > ctx.depth AND ctxs.path LIKE CONCAT(ctx.path, '/%')))
                          WHERE rc.capability {$cap_sql2}
                            AND rc.permission = 1
                            AND rc.contextid > 1) rcc
                     ON (rcc.contextid = ctxs.id AND rcc.roleid = ra.roleid)
-                  JOIN course_categories cc ON (cc.id = ctxs.instanceid AND cc.visible)
-                  JOIN course c ON (c.category = cc.id AND c.visible)
+                  JOIN {course_categories} cc ON (cc.id = ctxs.instanceid AND cc.visible)
+                  JOIN {course} c ON (c.category = cc.id AND c.visible)
                  WHERE ra.userid = :userid2";
 
         $params['userid1'] = $userid;
