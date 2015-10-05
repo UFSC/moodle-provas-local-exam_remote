@@ -385,10 +385,16 @@ class local_exam_remote_external extends external_api {
 
         require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 
-        check_dir_exists($CFG->dataroot . '/temp/backup');
+        $tmp_backup_dir = $CFG->dataroot . '/temp/backup';
+        check_dir_exists($tmp_backup_dir);
+
         $rand_backup_path = 'activity_restore_' . date('YmdHis') . '_' . rand();
-        $zip = new zip_packer();
-        $zip->extract_to_pathname($_FILES['backup_file']['tmp_name'],  $CFG->dataroot . '/temp/backup/' . $rand_backup_path);
+        $fp = get_file_packer('application/vnd.moodle.backup');
+
+        $extracted = $fp->extract_to_pathname($_FILES['backup_file']['tmp_name'], $tmp_backup_dir.'/'.$rand_backup_path);
+        if (!$extracted) {
+            throw new backup_helper_exception('missing_moodle_backup_file', $rand_backup_path);
+        }
 
         $adminid = $DB->get_field('user', 'id', array('username'=>'admin'));
         $controller = new restore_controller($rand_backup_path, $course->id, backup::INTERACTIVE_NO, backup::MODE_GENERAL,
