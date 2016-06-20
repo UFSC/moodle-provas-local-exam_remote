@@ -36,7 +36,7 @@ Download
 
 Este plugin está disponível no seguinte endereço:
 
-   https://github.com/UFSC/moodle-provas-local-exam_remote
+    https://github.com/UFSC/moodle-provas-local-exam_remote
 
 Os outros plugins podem ser encontrados em:
 
